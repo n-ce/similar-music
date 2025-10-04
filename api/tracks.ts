@@ -1,5 +1,5 @@
-
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { getSimilarTracks, LastFmTrack } from './lastfm_api';
 import { getYouTubeSongs, YouTubeSong } from './get_youtube_songs';
 
 function parseDuration(duration: string | undefined): number | null {
@@ -28,19 +28,16 @@ export default async function handler(
     return response.status(400).json({ error: 'Missing title or artist parameter' });
   }
 
-  const lastFmUrl = `https://ws.audioscrobbler.com/2.0/?method=track.getsimilar&artist=${artist}&track=${title}&api_key=${apiKey}&format=json`;
-
   try {
-    const lastFmResponse = await fetch(lastFmUrl);
-    const lastFmData = await lastFmResponse.json();
+    const lastFmData = await getSimilarTracks(title as string, artist as string, apiKey);
 
-    if (lastFmData.error) {
-      return response.status(500).json({ error: lastFmData.message });
+    if ('error' in lastFmData) {
+      return response.status(500).json({ error: lastFmData.error });
     }
 
     const similarTracks = lastFmData.similartracks.track;
 
-    const youtubeSearchPromises = similarTracks.map(async (lastFmTrack: any) => {
+    const youtubeSearchPromises = similarTracks.map(async (lastFmTrack: LastFmTrack) => {
       const searchQuery = `${lastFmTrack.name} ${lastFmTrack.artist.name}`;
       const youtubeSongs = await getYouTubeSongs(searchQuery);
 
@@ -60,26 +57,18 @@ export default async function handler(
         return titleMatch && artistMatch && durationMatch;
       });
 
-      if (exactMatch) {
-        return {
-          ...exactMatch,
-          author: exactMatch.author ? `${exactMatch.author} - Topic` : undefined,
-        };
-      }
+      const selectedSong = exactMatch || youtubeSongs[0];
 
-      // Fallback to the first result if no exact match is found
-      return youtubeSongs[0];
+      return {
+        ...selectedSong,
+        author: selectedSong.author ? `${selectedSong.author} - Topic` : undefined,
+      };
     });
 
     const youtubeResults = await Promise.all(youtubeSearchPromises);
     const filteredResults = youtubeResults.filter(result => result !== null);
 
-    const finalResults = filteredResults.map(result => ({
-      ...result,
-      author: result.author ? `${result.author} - Topic` : undefined,
-    }));
-
-    return response.status(200).json(finalResults);
+    return response.status(200).json(filteredResults);
   } catch (error) {
     console.error('Error in API handler:', error);
     return response.status(500).json({ error: 'Something went wrong' });
