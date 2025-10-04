@@ -1,5 +1,58 @@
-
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+
+const YOUTUBE_MUSIC_SEARCH_URL = 'https://music.youtube.com/youtubei/v1/search';
+
+interface YouTubeMusicSearchResponse {
+  contents: {
+    tabbedSearchResultsRenderer: {
+      tabs: {
+        tabRenderer: {
+          content: {
+            sectionListRenderer: {
+              contents: {
+                musicShelfRenderer: {
+                  contents: {
+                    musicResponsiveListItemRenderer: {
+                      flexColumns: {
+                        musicResponsiveListItemFlexColumnRenderer: {
+                          text: {
+                            runs: {
+                              text: string;
+                              navigationEndpoint?: {
+                                watchEndpoint?: {
+                                  videoId: string;
+                                };
+                                browseEndpoint?: {
+                                  browseId: string;
+                                };
+                              };
+                            }[];
+                          };
+                        };
+                      }[];
+                      thumbnail: {
+                        musicThumbnailRenderer: {
+                          thumbnail: {
+                            thumbnails: {
+                              url: string;
+                              width: number;
+                              height: number;
+                            }[];
+                          };
+                        };
+                      };
+                    };
+                  }[];
+                };
+              }[];
+            };
+          };
+        };
+      }[];
+    };
+  };
+}
+
 
 export default async function handler(
   request: VercelRequest,
@@ -16,27 +69,64 @@ export default async function handler(
     return response.status(400).json({ error: 'Missing title or artist parameter' });
   }
 
-  const url = `https://ws.audioscrobbler.com/2.0/?method=track.getsimilar&artist=${artist}&track=${title}&api_key=${apiKey}&format=json`;
+  const lastFmUrl = `https://ws.audioscrobbler.com/2.0/?method=track.getsimilar&artist=${artist}&track=${title}&api_key=${apiKey}&format=json`;
 
   try {
-    const lastFmResponse = await fetch(url);
-    const data = await lastFmResponse.json();
+    const lastFmResponse = await fetch(lastFmUrl);
+    const lastFmData = await lastFmResponse.json();
 
-    if (data.error) {
-      return response.status(500).json({ error: data.message });
+    if (lastFmData.error) {
+      return response.status(500).json({ error: lastFmData.message });
     }
 
-    const tracks = data.similartracks.track.map((track: any) => ({
-      name: track.name,
-      artist: track.artist.name,
-      url: track.url,
-      duration: track.duration,
-      playcount: track.playcount,
-      match: track.match,
-      image: track.image,
-    }));
+    const similarTracks = lastFmData.similartracks.track;
 
-    return response.status(200).json(tracks);
+    const youtubeSearchPromises = similarTracks.map((track: any) => {
+      const searchQuery = `${track.name} ${track.artist.name}`;
+      const requestBody = {
+        context: {
+          client: {
+            clientName: 'WEB_REMIX',
+            clientVersion: '1.20240529.01.00',
+          },
+        },
+        query: searchQuery,
+      };
+
+      return fetch(YOUTUBE_MUSIC_SEARCH_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      })
+        .then((res) => res.json())
+        .then((data: YouTubeMusicSearchResponse) => {
+          const firstResult = data.contents?.tabbedSearchResultsRenderer?.tabs[0]?.tabRenderer?.content?.sectionListRenderer?.contents[0]?.musicShelfRenderer?.contents[0]?.musicResponsiveListItemRenderer;
+          if (!firstResult) {
+            return null;
+          }
+          const videoId = firstResult.flexColumns[0].musicResponsiveListItemFlexColumnRenderer.text.runs[0].navigationEndpoint?.watchEndpoint?.videoId;
+          const title = firstResult.flexColumns[0].musicResponsiveListItemFlexColumnRenderer.text.runs[0].text;
+          const author = firstResult.flexColumns[1].musicResponsiveListItemFlexColumnRenderer.text.runs[0].text;
+          const duration = firstResult.flexColumns[1].musicResponsiveListItemFlexColumnRenderer.text.runs[2].text;
+          const channelUrl = firstResult.flexColumns[1].musicResponsiveListItemFlexColumnRenderer.text.runs[0].navigationEndpoint?.browseEndpoint?.browseId;
+
+
+          return {
+            id: videoId,
+            title,
+            author,
+            duration,
+            channelUrl: channelUrl ? `/channel/${channelUrl}`: undefined,
+          };
+        });
+    });
+
+    const youtubeResults = await Promise.all(youtubeSearchPromises);
+    const filteredResults = youtubeResults.filter(result => result !== null);
+
+    return response.status(200).json(filteredResults);
   } catch (error) {
     return response.status(500).json({ error: 'Something went wrong' });
   }
