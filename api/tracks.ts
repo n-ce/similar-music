@@ -102,7 +102,7 @@ export default async function handler(
       })
         .then((res) => res.json())
         .then((data: YouTubeMusicSearchResponse) => {
-          const songsShelf = data.contents?.tabbedSearchResultsRenderer?.tabs[0]?.tabRenderer?.content?.sectionListRenderer?.contents.find(shelf => shelf.musicShelfRenderer?.title.runs[0].text === 'Songs');
+          const songsShelf = data.contents?.tabbedSearchResultsRenderer?.tabs[0]?.tabRenderer?.content?.sectionListRenderer?.contents.find(shelf => shelf.musicShelfRenderer && shelf.musicShelfRenderer.title.runs[0].text === 'Songs');
           const firstResult = songsShelf?.musicShelfRenderer?.contents[0]?.musicResponsiveListItemRenderer;
           if (!firstResult) {
             return null;
