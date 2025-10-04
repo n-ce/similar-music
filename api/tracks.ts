@@ -61,7 +61,10 @@ export default async function handler(
       });
 
       if (exactMatch) {
-        return exactMatch;
+        return {
+          ...exactMatch,
+          author: exactMatch.author ? `${exactMatch.author} - Topic` : undefined,
+        };
       }
 
       // Fallback to the first result if no exact match is found
@@ -71,7 +74,12 @@ export default async function handler(
     const youtubeResults = await Promise.all(youtubeSearchPromises);
     const filteredResults = youtubeResults.filter(result => result !== null);
 
-    return response.status(200).json(filteredResults);
+    const finalResults = filteredResults.map(result => ({
+      ...result,
+      author: result.author ? `${result.author} - Topic` : undefined,
+    }));
+
+    return response.status(200).json(finalResults);
   } catch (error) {
     console.error('Error in API handler:', error);
     return response.status(500).json({ error: 'Something went wrong' });
