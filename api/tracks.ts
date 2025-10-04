@@ -87,7 +87,7 @@ export default async function handler(
         context: {
           client: {
             clientName: 'WEB_REMIX',
-            clientVersion: '1.20240529.01.00',
+            clientVersion: '1.20251001.01.00',
           },
         },
         query: searchQuery,
@@ -102,14 +102,15 @@ export default async function handler(
       })
         .then((res) => res.json())
         .then((data: YouTubeMusicSearchResponse) => {
-          const firstResult = data.contents?.tabbedSearchResultsRenderer?.tabs[0]?.tabRenderer?.content?.sectionListRenderer?.contents[0]?.musicShelfRenderer?.contents[0]?.musicResponsiveListItemRenderer;
+          const songsShelf = data.contents?.tabbedSearchResultsRenderer?.tabs[0]?.tabRenderer?.content?.sectionListRenderer?.contents.find(shelf => shelf.musicShelfRenderer?.title.runs[0].text === 'Songs');
+          const firstResult = songsShelf?.musicShelfRenderer?.contents[0]?.musicResponsiveListItemRenderer;
           if (!firstResult) {
             return null;
           }
           const videoId = firstResult.flexColumns[0].musicResponsiveListItemFlexColumnRenderer.text.runs[0].navigationEndpoint?.watchEndpoint?.videoId;
           const title = firstResult.flexColumns[0].musicResponsiveListItemFlexColumnRenderer.text.runs[0].text;
           const author = firstResult.flexColumns[1].musicResponsiveListItemFlexColumnRenderer.text.runs[0].text;
-          const duration = firstResult.flexColumns[1].musicResponsiveListItemFlexColumnRenderer.text.runs[2].text;
+          const duration = firstResult.flexColumns[1].musicResponsiveListItemFlexColumnRenderer.text.runs.slice(-1)[0].text;
           const channelUrl = firstResult.flexColumns[1].musicResponsiveListItemFlexColumnRenderer.text.runs[0].navigationEndpoint?.browseEndpoint?.browseId;
 
 
