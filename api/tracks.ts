@@ -1,6 +1,60 @@
+
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 const YOUTUBE_MUSIC_SEARCH_URL = 'https://music.youtube.com/youtubei/v1/search';
+
+interface MusicShelfRenderer {
+  title: {
+    runs: {
+      text: string;
+    }[];
+  };
+  contents: {
+    musicResponsiveListItemRenderer: {
+      flexColumns: {
+        musicResponsiveListItemFlexColumnRenderer: {
+          text: {
+            runs: {
+              text: string;
+              navigationEndpoint?: {
+                watchEndpoint?: {
+                  videoId: string;
+                };
+                browseEndpoint?: {
+                  browseId: string;
+                };
+              };
+            }[];
+          };
+        };
+      }[];
+      thumbnail: {
+        musicThumbnailRenderer: {
+          thumbnail: {
+            thumbnails: {
+              url: string;
+              width: number;
+              height: number;
+            }[];
+          };
+        };
+      };
+    };
+  }[];
+}
+
+interface MusicCardShelfRenderer {
+  // empty for now
+}
+
+interface Shelf {
+  musicShelfRenderer?: MusicShelfRenderer;
+  musicCardShelfRenderer?: MusicCardShelfRenderer;
+}
+
+function isMusicShelfRenderer(shelf: Shelf): shelf is { musicShelfRenderer: MusicShelfRenderer } {
+  return shelf.musicShelfRenderer !== undefined;
+}
 
 interface YouTubeMusicSearchResponse {
   contents: {
@@ -9,42 +63,7 @@ interface YouTubeMusicSearchResponse {
         tabRenderer: {
           content: {
             sectionListRenderer: {
-              contents: {
-                musicShelfRenderer: {
-                  contents: {
-                    musicResponsiveListItemRenderer: {
-                      flexColumns: {
-                        musicResponsiveListItemFlexColumnRenderer: {
-                          text: {
-                            runs: {
-                              text: string;
-                              navigationEndpoint?: {
-                                watchEndpoint?: {
-                                  videoId: string;
-                                };
-                                browseEndpoint?: {
-                                  browseId: string;
-                                };
-                              };
-                            }[];
-                          };
-                        };
-                      }[];
-                      thumbnail: {
-                        musicThumbnailRenderer: {
-                          thumbnail: {
-                            thumbnails: {
-                              url: string;
-                              width: number;
-                              height: number;
-                            }[];
-                          };
-                        };
-                      };
-                    };
-                  }[];
-                };
-              }[];
+              contents: Shelf[];
             };
           };
         };
@@ -102,7 +121,7 @@ export default async function handler(
       })
         .then((res) => res.json())
         .then((data: YouTubeMusicSearchResponse) => {
-          const songsShelf = data.contents?.tabbedSearchResultsRenderer?.tabs[0]?.tabRenderer?.content?.sectionListRenderer?.contents.find(shelf => shelf.musicShelfRenderer && shelf.musicShelfRenderer.title.runs[0].text === 'Songs');
+          const songsShelf = data.contents?.tabbedSearchResultsRenderer?.tabs[0]?.tabRenderer?.content?.sectionListRenderer?.contents.find((shelf): shelf is { musicShelfRenderer: MusicShelfRenderer } => isMusicShelfRenderer(shelf) && shelf.musicShelfRenderer.title.runs[0].text === 'Songs');
           const firstResult = songsShelf?.musicShelfRenderer?.contents[0]?.musicResponsiveListItemRenderer;
           if (!firstResult) {
             return null;
