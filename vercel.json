@@ -1,5 +1,13 @@
 {
-  "rewrites": [
-    { "source": "/api/tracks", "destination": "/api/tracks.ts" }
+  "version": 2,
+  "routes": [
+    {
+      "src": "/(.*)",
+      "headers": {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization"
+      }
+    }
   ]
 }
