@@ -1,17 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getSimilarTracks, LastFmTrack } from './lastfm_api';
-import { getYouTubeSongs, YouTubeSong } from './get_youtube_songs';
-
-function parseDuration(duration: string | undefined): number | null {
-  if (!duration) return null;
-  const parts = duration.split(':').map(Number);
-  if (parts.length === 2) {
-    return parts[0] * 60 + parts[1];
-  } else if (parts.length === 1) {
-    return parts[0];
-  }
-  return null;
-}
+import { getSimilarTracks } from './lastfm_api';
+import { getYouTubeSong, type YouTubeSong } from './get_youtube_song';
 
 export default async function handler(
   request: VercelRequest,
@@ -35,40 +24,20 @@ export default async function handler(
       return response.status(500).json({ error: lastFmData.error });
     }
 
-    const similarTracks = lastFmData.similartracks.track;
+    const matchedYouTubeSongs: (YouTubeSong | null)[] = [];
 
-    const youtubeSearchPromises = similarTracks.map(async (lastFmTrack: LastFmTrack) => {
-      const searchQuery = `${lastFmTrack.name} ${lastFmTrack.artist.name}`;
-      const youtubeSongs = await getYouTubeSongs(searchQuery);
+    for (const lastFmTrack of lastFmData) {
+      const searchQuery = `${lastFmTrack.title} ${lastFmTrack.artist}`;
 
-      if (youtubeSongs.length === 0) {
-        return null;
+      const youtubeSong = await getYouTubeSong(searchQuery);
+
+      if ('id' in youtubeSong) {
+        matchedYouTubeSongs.push(youtubeSong as YouTubeSong);
       }
+    }
 
-      const lastFmDuration = lastFmTrack.duration ? Number(lastFmTrack.duration) : null;
 
-      // Try to find an exact match based on title, artist, and duration
-      const exactMatch = youtubeSongs.find(ytSong => {
-        const ytDuration = parseDuration(ytSong.duration);
-        const titleMatch = ytSong.title?.toLowerCase() === lastFmTrack.name.toLowerCase();
-        const artistMatch = ytSong.author?.toLowerCase() === lastFmTrack.artist.name.toLowerCase();
-        const durationMatch = lastFmDuration && ytDuration && Math.abs(lastFmDuration - ytDuration) <= 5; // Allow a 5-second difference
-
-        return titleMatch && artistMatch && durationMatch;
-      });
-
-      const selectedSong = exactMatch || youtubeSongs[0];
-
-      return {
-        ...selectedSong,
-        author: selectedSong.author ? `${selectedSong.author} - Topic` : undefined,
-      };
-    });
-
-    const youtubeResults = await Promise.all(youtubeSearchPromises);
-    const filteredResults = youtubeResults.filter(result => result !== null);
-
-    return response.status(200).json(filteredResults);
+    return response.status(200).json(matchedYouTubeSongs);
   } catch (error) {
     console.error('Error in API handler:', error);
     return response.status(500).json({ error: 'Something went wrong' });
