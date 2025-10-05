@@ -63,9 +63,9 @@ export async function getYouTubeSong(query: string): Promise<YouTubeSong | {}> {
       const artistRun = metadataRuns.find((run: any) => run.navigationEndpoint?.browseEndpoint?.browseId);
       const author = artistRun?.text;
       const channelId = artistRun?.navigationEndpoint?.browseEndpoint?.browseId;
-      const duration = metadataRuns[4].text || '00:00';
 
-
+      const duration = metadataRuns.find((run: any) => run.text?.[run.text?.length - 3] === ':')?.text;
+      if (!duration) continue;
 
       return {
         id,
