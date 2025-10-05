@@ -39,6 +39,9 @@ export async function getYouTubeSong(query: string): Promise<YouTubeSong | {}> {
     const data = await response.json();
 
     const contents = data.contents?.tabbedSearchResultsRenderer?.tabs[0]?.tabRenderer?.content?.sectionListRenderer?.contents;
+
+    const isMixed = contents?.length === 2;
+
     const searchList = contents?.[1]?.musicShelfRenderer?.contents || [];
 
     for (const item of searchList) {
@@ -54,6 +57,8 @@ export async function getYouTubeSong(query: string): Promise<YouTubeSong | {}> {
 
       const metadataRuns = flexColumns[1]?.musicResponsiveListItemFlexColumnRenderer?.text?.runs;
       if (!metadataRuns) continue;
+
+      if (isMixed && metadataRuns[0].text !== 'Song') continue;
 
       const artistRun = metadataRuns.find((run: any) => run.navigationEndpoint?.browseEndpoint?.browseId);
       const author = artistRun?.text;
