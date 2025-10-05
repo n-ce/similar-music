@@ -7,7 +7,7 @@ export default async function handler(
   request: VercelRequest,
   response: VercelResponse,
 ) {
-  const { title, artist } = request.query;
+  const { title, artist, limit } = request.query;
   const apiKey = process.env.LASTFM_API_KEY;
 
   if (!apiKey) {
@@ -21,7 +21,7 @@ export default async function handler(
 
   try {
     // 1. Fetch similar tracks (must be sequential first step)
-    const lastFmData = await getSimilarTracks(title as string, artist as string, apiKey);
+    const lastFmData = await getSimilarTracks(title as string, artist as string, apiKey, limit as string || '5');
 
     if ('error' in lastFmData) {
       return response.status(500).json({ error: lastFmData.error });

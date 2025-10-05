@@ -10,7 +10,7 @@ async function testModules() {
   const lastFmQueryArtist = 'Goo Goo Dolls';
 
   // --- STEP 1: Fetch Similar Tracks (Sequential, as it's the first step) ---
-  const lastFmResult = await getSimilarTracks(lastFmQueryTitle, lastFmQueryArtist, lastFmApiKey);
+  const lastFmResult = await getSimilarTracks(lastFmQueryTitle, lastFmQueryArtist, lastFmApiKey, '10');
 
   if ('error' in lastFmResult) {
     console.error('Last.fm API Error:', lastFmResult.error);
