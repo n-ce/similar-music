@@ -2,15 +2,6 @@
   "name": "similar-music-api",
   "version": "1.0.0",
   "description": "API for finding similar music",
-  "main": "index.js",
-  "type": "module",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "dependencies": {},
   "devDependencies": {
     "@types/node": "^24.6.2",
     "@vercel/node": "^5.3.24",

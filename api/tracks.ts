@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getSimilarTracks } from './lastfm_api.ts';
-import { getYouTubeSong, type YouTubeSong } from './get_youtube_song.ts';
+import { getSimilarTracks } from './lastfm_api';
+import { getYouTubeSong, type YouTubeSong } from './get_youtube_song';
 
 export default async function handler(
   request: VercelRequest,
