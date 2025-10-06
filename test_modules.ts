@@ -5,7 +5,7 @@ async function testModules() {
   console.log('Testing Last.fm API...');
 
   // NOTE: You must fill in your actual Last.fm API Key here
-  const lastFmApiKey = '0867bcb6f36c879398969db682a7b69b';
+  const lastFmApiKey = '';
   const lastFmQueryTitle = 'Iris';
   const lastFmQueryArtist = 'Goo Goo Dolls';
 
