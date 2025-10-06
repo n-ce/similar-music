@@ -1,6 +1,6 @@
 # Similar Music Backend
 
-This project provides a backend service for discovering similar music, leveraging the YouTube and Last.fm APIs.
+This project provides a backend service for discovering similar music, leveraging the Last.fm API.
 
 ## Getting Started
 
@@ -23,10 +23,9 @@ This project provides a backend service for discovering similar music, leveragin
 
 ### Configuration
 
-You will need API keys for YouTube and Last.fm. Create a `.env` file in the root directory of the project and add the following:
+You will need an API key for Last.fm. Create a `.env` file in the root directory of the project and add the following:
 
 ```
-YOUTUBE_API_KEY=YOUR_YOUTUBE_API_KEY
 LASTFM_API_KEY=YOUR_LASTFM_API_KEY
 ```
 
@@ -47,4 +46,6 @@ The API exposes endpoints to search for tracks.
 Search for tracks.
 
 **Query Parameters:**
-* `q`: Search query (e.g., "artist song title")
+* `title`: (Required) The title of the track to search for.
+* `artist`: (Required) The artist of the track to search for.
+* `limit`: (Optional) The maximum number of tracks to return. Defaults to 5 if not provided.
