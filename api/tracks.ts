@@ -27,6 +27,25 @@ export default async function handler(
       return response.status(500).json({ error: lastFmData.error });
     }
 
+
+    // Function to format the duration string
+const formatDuration = (duration: string): string => {
+  // Split the duration into minutes and seconds
+  const parts = duration.split(':');
+
+  if (parts.length === 2) {
+    const [minutesStr, secondsStr] = parts;
+
+    // Pad the minutes part with a leading zero if it's a single digit
+    const paddedMinutes = minutesStr.padStart(2, '0');
+
+    // Combine them back
+    return `${paddedMinutes}:${secondsStr}`;
+  }
+
+  // Return the original string if it's not in the expected 'm:ss' or 'mm:ss' format
+  return duration;
+};
     // --- CONCURRENT FETCHING START ---
 
     // 2. Map the tracks to an array of Promises for concurrent execution.
@@ -44,7 +63,11 @@ export default async function handler(
 
     // 4. Filter the results to only include successfully matched songs.
     const matchedYouTubeSongs: YouTubeSong[] = allYoutubeResults
-      .filter((result): result is YouTubeSong => 'id' in result);
+      .filter((result): result is YouTubeSong => 'id' in result)
+    .map(song => ({
+    ...song,
+    duration: formatDuration(song.duration)
+  }));
 
     return response.status(200).json(matchedYouTubeSongs);
   } catch (error) {
